@@ -12,7 +12,7 @@ imu1 = MPU6050(i2c)
 btn1 = Pin(14, Pin.IN, Pin.PULL_DOWN)
 
 # Definição das constantes de limite de tempo e de temperatura
-LIMITE_TEMPO_PORTA_MS = 5000
+LIMITE_TEMPO_PORTA_MS = 1000
 LIMITE_VARIACAO_TEMP = 3.0
 
 # Variáveis para monitorar os status dos erros 
