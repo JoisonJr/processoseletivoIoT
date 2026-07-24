@@ -34,7 +34,7 @@
     [ "imu1:SCL", "esp:22", "gold", [ "v0" ] ],
     [ "imu1:SDA", "esp:21", "green", [ "v0" ] ],
     [ "btn1:1.r", "esp:14", "green", [ "v0" ] ],
-    [ "esp:GND.1", "btn1:2.r", "black", [ "h0" ] ]
+    [ "esp:5V", "btn1:2.r", "red", [ "h0" ] ]
   ],
   "dependencies": {}
 }
