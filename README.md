@@ -9,16 +9,16 @@
 
 ## Visão Geral da Solução
 
-- Objetivo do projeto: Monitora a temperatura do ambiente com um MPU6050 e a abertura de uma porta, emitindo alertas em casos "perigosos" (porta aberta por muito tempo ou variação abrupta na temperatura)
-- Funções do sistema embarcado: Mede a temperatura ambiente e emite um alerta caso a temperatura fique instável e controla o fechamento e abertura de uma porta, além de também emitir um alerta caso esteja aberta por muito tempo
-- Interação com usuário: A única interação com o usuário presente no sistema é por meio de um botão que determina se a porta está aberta ou não
+- Objetivo do projeto: Monitora a temperatura do ambiente com um MPU6050 e a abertura de uma porta, emitindo alertas em casos "perigosos" (porta aberta por muito tempo ou variação abrupta na temperatura);
+- Funções do sistema embarcado: Mede a temperatura ambiente e emite um alerta caso a temperatura fique instável e controla o fechamento e abertura de uma porta, além de também emitir um alerta caso esteja aberta por muito tempo;
+- Interação com usuário: A única interação com o usuário presente no sistema é por meio de um botão que determina se a porta está aberta ou não;
 
 ---
 
 ## Arquitetura do Sistema Embarcado
 
 De forma geral, o programa pode ser "dividido" em quatro funções:
-- **checkBotao()**: É a responsável por abrir e fechar a porta. Guarda o momento em que a a porta foi aberta na variável tsAbertura com time.ticks_ms(), que retorna o instante atual de execução do programa em milissegundos para verificar quando o alarme será acionado em checkPortaAberta(), e altera o estado da variável global portaAberta
+- **checkBotao()**: É a responsável por abrir e fechar a porta. Guarda o momento em que a a porta foi aberta na variável tsAbertura com time.ticks_ms(), que retorna o instante atual de execução do programa em milissegundos para verificar quando o alarme será acionado em checkPortaAberta(), e altera o estado da variável global portaAberta;
 ```python
 def checkBotao():
     global portaAberta, tsAbertura
@@ -32,7 +32,7 @@ def checkBotao():
     portaAberta = portaAtual
 
 ```
-- **checkAlarmePortaAberta()**: Subtrai o tempo atual de execução do tempo em que a porta foi aberta (tsAbertura) e verifica se ultrapassou o limte de tempo
+- **checkAlarmePortaAberta()**: Subtrai o tempo atual de execução do tempo em que a porta foi aberta (tsAbertura) e verifica se ultrapassou o limte de tempo;
 ```python
 def checkAlarmePortaAberta():
   global alarmePortaAberta
@@ -44,7 +44,7 @@ def checkAlarmePortaAberta():
     alarmePortaAberta = False
 
 ```
-- **getImuTemp()**: Lê a temperatura atual do IMU e compara com a de referência, que é obtida ao calcular a média das leituras anteriores. A quantidade de leituras anteriores é definida por MAX_LEITURAS, definida em 100. Caso a porta esteja aberto ou o valor seja anômalo, ele não será adicionado à lista
+- **getImuTemp()**: Lê a temperatura atual do IMU e compara com a de referência, que é obtida ao calcular a média das leituras anteriores. A quantidade de leituras anteriores é definida por MAX_LEITURAS, definida em 100. Caso a porta esteja aberto ou o valor seja anômalo, ele não será adicionado à lista;
 ```python
 def getImuTemp():
   global somaLeituras, tempRef, alarmeTermico
@@ -74,7 +74,7 @@ def getImuTemp():
     print("Erro ao ler o MPU6050: ", e)
 
 ```
-- **printStatus()**: Por fim, imprime as mensagens de acordo com os estados das variáveis utilizadas (alarmePortaAberta, alarmeTermico, estadoAnterior, alarmePortaAnterior e alarmeTermicoAnterior). As variáveis que têm "Anterior" no nome são utilizadas para evitar a impressão repetida de uma mensagem, e a atualização destas é feita no final da função
+- **printStatus()**: Por fim, imprime as mensagens de acordo com os estados das variáveis utilizadas (alarmePortaAberta, alarmeTermico, estadoAnterior, alarmePortaAnterior e alarmeTermicoAnterior). As variáveis que têm "Anterior" no nome são utilizadas para evitar a impressão repetida de uma mensagem, e a atualização destas é feita no final da função;
 ```python
 def printStatus():
   global alarmePortaAberta, alarmeTermico, estadoAnterior
@@ -96,7 +96,7 @@ def printStatus():
   estadoAnterior = alarmePortaAberta or alarmeTermico
 
 ```
-Todas essas funções são executadas dentro do loop principal, no qual também está presente time.sleep_ms(50), paralisando o programa por 50 milissegundos. Não há interação direta entre o botão e o MPU6050, e os dois interagem diretamente com o ESP32.`
+Todas essas funções são executadas dentro do loop principal, no qual também está presente time.sleep_ms(50), paralisando o programa por 50 milissegundos. Não há interação direta entre o botão e o MPU6050, e os dois interagem diretamente com o ESP32.
 ```python
 # Por fim, o loop executa todas as funções criadas anteriormente
 while True:
@@ -113,9 +113,9 @@ while True:
 
 Liste os principais componentes definidos no `diagram.json`, por exemplo:
 
-- ESP32-DevKitC V4: Controla toda a lógica do funcionamento do sistema
-- MPU6050: Mede a temperatura ambiente
-- Push Button: Fecha e abre a porta
+- ESP32-DevKitC V4: Controla toda a lógica do funcionamento do sistema;
+- MPU6050: Mede a temperatura ambiente;
+- Push Button: Fecha e abre a porta;
 
     ![alt text](image.png)
 
@@ -125,8 +125,8 @@ Liste os principais componentes definidos no `diagram.json`, por exemplo:
 
 
 - Inicialmente, pretendia utilizar uma interrupção para ler a mudança de estado da porta e um timer para cronometrar o tempo em que ficou aberta, mas aprendi que não é boa prática utilizar código que aloque memória dentro de interrupções (que é o caso de um timer), e tive problemas ao aplicar um debouncer ao botão, portanto substituí o timer por uma lógica que analisa o tempo em que a porta foi aberta (guardado em tsAbertura) e verifica se, com base no tempo atual, o alarme deve ser ativado ou não, e a interrupção foi substituída por um simples polling no loop principal.
-- Para obter a temperatura de referência, usei uma lista para guardar as últimas medições e calculei sua média. Assim, o sistema emitirá um alarme no momento em que a temperatura sair desse limite, mas caso se estabilize nessa nova temperatura, a mensagem de sistema normalizdo será impressa. Além disso, como a temperatura de referência deve ser coletada enquanto a porta estiver fechada, a lista será atualizada apenas quando esta condição for cumprida, e para evitar que valores com aumento repentino influenciem no cálculo da temperatura de referência, eles também não serão adicionados à lista
-- Os estados dos alarmes são definidos pelas variáveis alarmePortaAberta e alarmeTermico, e seus estados anteriores (alarmePortaAnterior e alarmeTermicoAnterior, bem como estadoAnterior, que guarda o estado anterior do sistema todo) são usados para imprimir as mensagens de alerta apenas uma vez na função printStatus(), como está no exemplo abaixo
+- Para obter a temperatura de referência, usei uma lista para guardar as últimas medições e calculei sua média. Assim, o sistema emitirá um alarme no momento em que a temperatura sair desse limite, mas caso se estabilize nessa nova temperatura, a mensagem de sistema normalizdo será impressa. Além disso, como a temperatura de referência deve ser coletada enquanto a porta estiver fechada, a lista será atualizada apenas quando esta condição for cumprida, e para evitar que valores com aumento repentino influenciem no cálculo da temperatura de referência, eles também não serão adicionados à lista.
+- Os estados dos alarmes são definidos pelas variáveis alarmePortaAberta e alarmeTermico, e seus estados anteriores (alarmePortaAnterior e alarmeTermicoAnterior, bem como estadoAnterior, que guarda o estado anterior do sistema todo) são usados para imprimir as mensagens de alerta apenas uma vez na função printStatus(), como está no exemplo abaixo:
 ```python
  if alarmePortaAberta and not alarmePortaAnterior:
     print("ALERTA: Porta aberta por muito tempo!")
