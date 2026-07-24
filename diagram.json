@@ -1,7 +1,40 @@
 {
   "version": 1,
-  "author": "Uri Shaked",
+  "author": "Joison Júnior",
   "editor": "wokwi",
-  "parts": [ { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} } ],
-  "connections": [ [ "esp:TX", "$serialMonitor:RX", "", [] ], [ "esp:RX", "$serialMonitor:TX", "", [] ] ]
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": { "env": "micropython-20260406-v1.28.0" }
+    },
+    {
+      "type": "wokwi-mpu6050",
+      "id": "imu1",
+      "top": -64.82,
+      "left": 126.88,
+      "rotate": 180,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 121.4,
+      "left": -86.4,
+      "attrs": { "color": "green", "xray": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "imu1:VCC", "esp:3V3", "red", [ "v0", "h-134.48" ] ],
+    [ "imu1:GND", "esp:GND.3", "black", [ "v0" ] ],
+    [ "imu1:SCL", "esp:22", "gold", [ "v0" ] ],
+    [ "imu1:SDA", "esp:21", "green", [ "v0" ] ],
+    [ "btn1:1.r", "esp:14", "green", [ "v0" ] ],
+    [ "esp:GND.1", "btn1:2.r", "black", [ "h0" ] ]
+  ],
+  "dependencies": {}
 }
