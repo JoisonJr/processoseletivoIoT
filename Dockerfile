@@ -8,6 +8,8 @@ WORKDIR "/"
 
 # RUN mkdir -p /fs
 COPY src/main.py /main.py
+# atualização sugerida pelo Claude devido ao erro de compilação por não encontrar mpu6050.py
+COPY src/mpu6050.py /mpu6050.py
 # COPY boot.py /boot.py
 
 RUN git clone https://github.com/earlephilhower/mklittlefs.git && \
