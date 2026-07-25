@@ -26,14 +26,14 @@ portaAberta = False
 tsAbertura = 0
 
 def checkBotao():
-  global portaAberta, tsAbertura
-  # Como o controle de tempo no while True garante a execução a cada 50ms,
-  # o efeito de debounce indireto é mantido.
-  portaAtual = (btn1.value() == 0)
-  # Verifica se a porta foi aberta no instante atual para guardar o tempo de abertura e verificar
-  # o momemto em que o alarme deverá ser ativado
-  if portaAtual and not portaAberta:
-    tsAbertura = time.ticks_ms()
+    global portaAberta, tsAbertura
+    # Vale destacar que, agora com essa função dentro do while true:, que tem um sleep dentro, não é 
+    # mais necessário implementar o debounce dentro da função para checar o botão
+    portaAtual = (btn1.value() == 0)
+    # Verifica se a porta foi aberta no instante atual para guardar o tempo de abertura e verificar
+    # o momemto em que o alarme deverá ser ativado
+    if portaAtual and not portaAberta:
+        tsAbertura = time.ticks_ms()
     portaAberta = portaAtual
 
 
@@ -65,20 +65,20 @@ def getImuTemp():
     # serve apenas para o sobreaquecimento dos componentes, como estava na descrição do README,
     # não é necessário usar abs()
     if len(listaLeituras) > 0:
-      alarmeTermico = (tempAtual - tempRef) >= LIMITE_VARIACAO_TEMP
+        alarmeTermico = (tempAtual - tempRef) >= LIMITE_VARIACAO_TEMP
 
     # Coleta a temperatura de referência apenas quando a porta estiver fechada
     if not portaAberta and not alarmeTermico:
-      # Anexa a leitura atual à lista e, caso a lista esteja cheia, descarta a leitura mais antiga
-      listaLeituras.append(tempAtual)
-      somaLeituras = somaLeituras + tempAtual
-    # Caso a lista de leituras fique cheia, subtrai o valor da leitura mais antiga e o retira da
-    # lista de leituras
-    if len(listaLeituras) > MAX_LEITURAS:
-      somaLeituras = somaLeituras - listaLeituras.pop(0)
-
-    # Atualiza a temperatura de referência
-    tempRef = somaLeituras / len(listaLeituras)
+        # Anexa a leitura atual à lista e, caso a lista esteja cheia, descarta a leitura mais antiga
+        listaLeituras.append(tempAtual)
+        somaLeituras = somaLeituras + tempAtual
+        # Caso a lista de leituras fique cheia, subtrai o valor da leitura mais antiga e o retira da
+        # lista de leituras
+        if len(listaLeituras) > MAX_LEITURAS:
+            somaLeituras = somaLeituras - listaLeituras.pop(0)
+        
+        # Atualiza a temperatura de referência
+        tempRef = somaLeituras / len(listaLeituras)
   except Exception as e:
     print("Erro ao ler o MPU6050: ", e)
 
@@ -87,57 +87,34 @@ def getImuTemp():
 alarmePortaAnterior = False
 alarmeTermicoAnterior = False
 
-# Variáveis para gerenciar o delay não-bloqueante de normalização do sistema
-aguardandoNormalizacao = False
-tsInicioNormalizacao = 0
-DELAY_NORMALIZACAO_MS = 700
-
 # Imprime o status atual do sistema
 def printStatus():
   global alarmePortaAberta, alarmeTermico, estadoAnterior
   global alarmePortaAnterior, alarmeTermicoAnterior
-  global aguardandoNormalizacao, tsInicioNormalizacao
-
+  # Toda essa "lógica" de um tipo de alarme e seu anterior é para evitar uma "contínua impressão"
+  # do alarme enquanto o sistema está neste estado, e a variável estadoAnterior é utilizada para
+  # imprimir a mensagem de sistema normalizado depois do término de um alerta
   if alarmePortaAberta and not alarmePortaAnterior:
     print("ALERTA: Porta aberta por muito tempo!")
   if alarmeTermico and not alarmeTermicoAnterior:
     print("ALERTA: Degradacao termica detectada!")
-
-  # Verifica se o sistema acabou de normalizar
   if not (alarmePortaAberta or alarmeTermico) and estadoAnterior:
-    aguardandoNormalizacao = True
-    tsInicioNormalizacao = time.ticks_ms()
+    # Delay para imprimir a mensagem, pois estava dando erro no teste 3 do github actions
+    time.sleep_ms(700)
+    print("Status: Sistema Normalizado.")
 
-  # Se uma nova anomalia surgir durante os 700ms de espera, cancelamos a flag de normalização
-  if alarmePortaAberta or alarmeTermico:
-    aguardandoNormalizacao = False
-
-  # Processa o envio da mensagem de normalização após os 700ms sem travar o código
-  if aguardandoNormalizacao:
-    if time.ticks_diff(time.ticks_ms(), tsInicioNormalizacao) >= DELAY_NORMALIZACAO_MS:
-      print("Status: Sistema Normalizado.")
-      aguardandoNormalizacao = False # Reseta a flag após imprimir
-
-  # Atualiza os estados anteriores para a próxima iteração
+  # Por fim, os alarmes anteriores são atualizados com os estados atuais para a próxima iteração, 
+  # bem como o estadoAnterior
   alarmePortaAnterior = alarmePortaAberta
   alarmeTermicoAnterior = alarmeTermico
   estadoAnterior = alarmePortaAberta or alarmeTermico
-
+  
 print("Sistema de Monitoramento Inicializado")
-
-# Variáveis de controle de tempo para o loop principal
-tsUltimoLoop = time.ticks_ms()
-INTERVALO_LOOP_MS = 50
 
 # Por fim, o loop executa todas as funções criadas anteriormente
 while True:
-  tempoAtual = time.ticks_ms()
-
-  # Garante que as checagens só ocorram a cada 50ms, liberando a CPU entre os ciclos
-  if time.ticks_diff(tempoAtual, tsUltimoLoop) >= INTERVALO_LOOP_MS:
-    tsUltimoLoop = tempoAtual # Atualiza a marcação de tempo
-
-  checkBotao()
-  checkAlarmePortaAberta()
-  getImuTemp()
-  printStatus()
+    checkBotao()
+    checkAlarmePortaAberta()
+    getImuTemp()
+    printStatus()
+    time.sleep_ms(50)
