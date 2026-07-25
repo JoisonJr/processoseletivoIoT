@@ -87,10 +87,17 @@ def getImuTemp():
 alarmePortaAnterior = False
 alarmeTermicoAnterior = False
 
+# Variáveis para aplicar delay de 700ms para imprimir a mensagem de sistema normalizado
+aguardandoNormalizacao = False
+tsInicioNormalizacao = 0
+DELAY_NORMALIZACAO_MS = 700
+
 # Imprime o status atual do sistema
 def printStatus():
   global alarmePortaAberta, alarmeTermico, estadoAnterior
   global alarmePortaAnterior, alarmeTermicoAnterior
+  global aguardandoNormalizacao, tsInicioNormalizacao
+
   # Toda essa "lógica" de um tipo de alarme e seu anterior é para evitar uma "contínua impressão"
   # do alarme enquanto o sistema está neste estado, e a variável estadoAnterior é utilizada para
   # imprimir a mensagem de sistema normalizado depois do término de um alerta
@@ -98,10 +105,22 @@ def printStatus():
     print("ALERTA: Porta aberta por muito tempo!")
   if alarmeTermico and not alarmeTermicoAnterior:
     print("ALERTA: Degradacao termica detectada!")
+
+  # Define que o sistema já foi normalizado, guardando o tempo em que aconteceu para esperar a 
+  # impressão da mensagem 
   if not (alarmePortaAberta or alarmeTermico) and estadoAnterior:
-    # Delay para imprimir a mensagem, pois estava dando erro no teste 3 do github actions
-    time.sleep_ms(700)
-    print("Status: Sistema Normalizado.")
+    aguardandoNormalizacao = True
+    tsInicioNormalizacao = time.ticks_ms()
+
+  # Cancela mensagem de incialização em caso de mudança de estado
+  if alarmePortaAberta or alarmeTermico:
+    aguardandoNormalizacao = False
+
+  # Lógica para o imprimir a mensagem
+  if aguardandoNormalizacao:
+    if time.ticks_diff(time.ticks_ms(), tsInicioNormalizacao) >= DELAY_NORMALIZACAO_MS:
+      print("Status: Sistema Normalizado.")
+      aguardandoNormalizacao = False # Reseta a flag após imprimir
 
   # Por fim, os alarmes anteriores são atualizados com os estados atuais para a próxima iteração, 
   # bem como o estadoAnterior
@@ -111,10 +130,19 @@ def printStatus():
   
 print("Sistema de Monitoramento Inicializado")
 
+# Variáveis de controle de tempo para o loop principal
+tsUltimoLoop = time.ticks_ms()
+INTERVALO_LOOP_MS = 50
+
 # Por fim, o loop executa todas as funções criadas anteriormente
 while True:
-    checkBotao()
-    checkAlarmePortaAberta()
-    getImuTemp()
-    printStatus()
-    time.sleep_ms(50)
+    tempoAtual = time.ticks_ms()
+    
+    # Garante que as checagens só ocorram a cada 50ms, liberando a CPU entre os ciclos
+    if time.ticks_diff(tempoAtual, tsUltimoLoop) >= INTERVALO_LOOP_MS:
+        tsUltimoLoop = tempoAtual # Atualiza a marcação de tempo
+        
+        checkBotao()
+        checkAlarmePortaAberta()
+        getImuTemp()
+        printStatus()
