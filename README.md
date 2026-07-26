@@ -146,6 +146,8 @@ O sistema funciona conforme o esperado, ativando o alarme quando a porta fica ab
 - Uma importante limitação dessa solução é justamente a possível alteração constante da temperatura de referência, o que não seria adequado, por exemplo, para monitorar a temperatura ambiente de qualquer coisa que não suporte altas temperaturas, pois se a temperatura aumentar gradualmente, nenhum alarme será emitido.
 - Dentre os principais aprendizados obtidos, destaco um maior entendimento do funcionamento e de como aplicar interrupçoes ao software, outras formas de implementar debouncing (embora não estejam presentes no código, estava pesquisando meios de implementá-las sem uma função bloqueante).
 
+DISCLAIMER: Utilizei IAs generativas para me auxiliar na correção deste texto e do código, bem como na implementação de algumas partes específicas, como o debounce no botão da porta.
+
 
 ---
 
